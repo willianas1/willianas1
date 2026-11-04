@@ -1,0 +1,46 @@
+name: Atualizar trilha de contribuições
+
+on:
+  schedule:
+    # 09:17 UTC = 06:17 em Fortaleza. O GitHub pode atrasar execuções agendadas.
+    - cron: '17 9 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/snake.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: profile-snake
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Baixar o repositório
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Gerar as animações clara e escura
+        uses: Platane/snk/svg-only@d8f6715049803e982ee5ff501b6b9b7d5deeb09b # v3
+        with:
+          github_user_name: ${{ github.repository_owner }}
+          outputs: |
+            dist/github-snake.svg?color_snake=%23e53935&color_dots=%23ebedf0,%23c8e68e,%238fca50,%235aab35,%23377e22
+            dist/github-snake-dark.svg?palette=github-dark&color_snake=%23ff6b5e&color_dots=%23161b22,%232b4c27,%234b7f30,%237cb342,%23b5df64
+
+      - name: Salvar as imagens na branch output
+        uses: peaceiris/actions-gh-pages@329bcc8f12caed2cefe5a5b80781499a6f3b361b # v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: output
+          keep_files: true
+          full_commit_message: 'chore: atualizar animações de contribuições'
